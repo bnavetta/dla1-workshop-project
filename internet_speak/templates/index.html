@@ -1,9 +1,22 @@
 <!DOCTYPE html>
 <html>
-    <title>TBD</title>
+    <title>A Dark Crevasse</title>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-    <script src="{{ url_for('static', filename='chat.js') }}"></script>
     <body>
-        <h1>Hello, World!</h1>
+        {% raw %}
+        <div id="app">
+            <ul class="message-history">
+                <li v-for="message in messages"><span :class="'username usr-' + message.author">{{ message.user }}</span>: {{ message.text }}</li>
+            </ul>
+            <div class="prompt pure-form">
+                <input type="text" v-model="input" @keyup.enter="send">
+                <button class="pure-button pure-button-primary" @click="send">Send</button>
+            </div>
+        </div>
+        {% endraw %}
+
+        <script src="https://unpkg.com/vue"></script>
+        <script src="{{ url_for('static', filename='chat.js') }}"></script>
     </body>
 </html>

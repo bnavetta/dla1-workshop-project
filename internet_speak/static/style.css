@@ -1,0 +1,55 @@
+#app {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 50px;
+
+    font-size: 16px;
+}
+
+.message-history {
+    flex: 1 0 auto;
+    padding: 10px;
+    min-height: 300px;
+    border-radius: 20px;
+    border: 1px solid black;
+}
+
+.message-history > li {
+    list-style-type: none;
+}
+
+.prompt {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.prompt > button, input {
+    margin: 5px;
+}
+
+.prompt > input {
+    width: 300px;
+}
+
+.username {
+    font-weight: bold;
+}
+
+.usr-feels {
+    color: orange;
+}
+
+.usr-computers {
+    color: #e8104d;
+}
+
+.usr-wreck {
+    color: purple;
+}
+
+.usr-you {
+    color: blue;
+}

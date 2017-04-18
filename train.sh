@@ -4,4 +4,5 @@ set -euo pipefail
 export PYTHONPATH="$PWD:${PYTHONPATH:-}"
 
 python3 -m internet_speak.train \
-    --data_dir=data
+    --data_dir=data \
+	--gpu_mem=0.98

@@ -8,44 +8,55 @@ import numpy as np
 
 from .model import Model
 
+personalities = ['computers', 'feels', 'wreck']
+
 
 class Chat(object):
-    def __init__(self, save_dir: str):
+    def __init__(self, name, save_dir: str):
         """
         Initialize a new Chat from a trained model
         :param save_dir: directory where the checkpointed model was saved
         """
+        self.name = name
         with open(os.path.join(save_dir, 'config.pkl'), 'rb') as f:
             args = cPickle.load(f)
-        with open(os.path.join(save_dir, 'chars_vocab.pkl'), 'rb') as f:
-            chars, vocab = cPickle.load(f)
-        self.model = Model(args, training=False)
-        self.session = tf.Session()
-        self.chars = chars
-        self.vocab = vocab
-        with self.session as sess:
-            tf.global_variables_initializer().run()
-            saver = tf.train.Saver(tf.global_variables())
-            checkpoint = tf.train.get_checkpoint_state(save_dir)
-            if checkpoint and checkpoint.model_checkpoint_path:
-                saver.restore(sess, checkpoint.model_checkpoint_path)
+        with open(os.path.join(save_dir, 'words_vocab.pkl'), 'rb') as f:
+            words, vocab = cPickle.load(f)
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self.model = Model(args, infer=True)
+            self.session = tf.Session(graph=self.graph)
+            self.words = words
+            self.vocab = vocab
+            with self.session.as_default():
+                tf.global_variables_initializer().run()
+                saver = tf.train.Saver(tf.global_variables())
+                checkpoint = tf.train.get_checkpoint_state(save_dir)
+                if checkpoint and checkpoint.model_checkpoint_path:
+                    saver.restore(self.session, checkpoint.model_checkpoint_path)
 
-    def respond(self, message: str, length: int = None) -> str:
+    def respond(self, message: str, length: int = None, beam: bool = True) -> str:
         if length is None:
-            # From my text message archive
-            length = int(np.random.normal(38.779657293497365, 37.300191755260634))
-        with self.session as sess:
-            result = self.model.sample(sess, self.chars, self.vocab, length + len(message), message, 1)
-        return result[len(message):]
+            length = int(np.random.normal(12, 4))
+        pick = 2 if beam else 1
+        with self.graph.as_default(), self.session.as_default():
+            result = self.model.sample(sess=self.session, words=self.words, vocab=self.vocab,
+                                       num=length + len(message), prime=message, pick=pick)
+        result = result[len(message):]
+        if result.startswith(' '):
+            result = result[1:]
+        parts = result.split(maxsplit=1)
+        if parts[0] not in self.words:
+            return parts[1]
+        return result
+
+    @staticmethod
+    def load(name: str):
+        return Chat(name, os.path.join('/media/data/personalities', name))
 
 
 class ChatManager(object):
-    def __init__(self, models_dir):
-        """
-        
-        :param models_dir: Directory where personality models are stored 
-        """
-        self.models_dir = models_dir
+    def __init__(self):
         self.mutex = Lock()
         self.chats = dict()
 
@@ -54,15 +65,24 @@ class ChatManager(object):
             if personality in self.chats:
                 return self.chats[personality]
             else:
-                chat = Chat(os.path.join(self.models_dir, personality))
+                chat = Chat.load(personality)
                 self.chats[personality] = (chat, Lock())
-                return chat
+                return self.chats[personality]
+
+    def responses(self, message):
+        result = {}
+        for name in personalities:
+            if np.random.random_sample() < 0.5:
+                with self.personality(name) as bot:
+                    result[name] = bot.respond(message)
+        return result
 
     @contextmanager
     def personality(self, personality):
         chat, lock = self._get_chat(personality)
-        with lock:
-            yield chat
+        lock.acquire()
+        yield chat
+        lock.release()
 
 
-chats = ChatManager('personalities')
+chats = ChatManager()
