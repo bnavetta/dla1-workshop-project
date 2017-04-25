@@ -1,5 +1,8 @@
 *.pyc
 __pycache__/
 
-# Privacy
-data/input.txt
+# Files are too big
+logs/
+personalities/
+data/
+save/
